@@ -55,7 +55,7 @@ public class ImageListActivity extends AbsListViewBaseActivity {
 			.showImageForEmptyUri(R.drawable.ic_empty)
 			.showImageOnFail(R.drawable.ic_error)
 			.cacheInMemory(true)
-			.cacheOnDisk(true)
+//			.cacheOnDisk(true)
 			.considerExifParams(true)
 			.displayer(new RoundedBitmapDisplayer(20))
 			.build();
