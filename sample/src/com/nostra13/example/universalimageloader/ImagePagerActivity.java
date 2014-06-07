@@ -63,7 +63,7 @@ public class ImagePagerActivity extends BaseActivity {
 			.showImageForEmptyUri(R.drawable.ic_empty)
 			.showImageOnFail(R.drawable.ic_error)
 			.resetViewBeforeLoading(true)
-//			.cacheOnDisk(true)
+			.cacheOnDisk(true)
 			.imageScaleType(ImageScaleType.EXACTLY)
 			.bitmapConfig(Bitmap.Config.RGB_565)
 			.considerExifParams(true)

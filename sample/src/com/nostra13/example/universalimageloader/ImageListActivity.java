@@ -55,7 +55,7 @@ public class ImageListActivity extends AbsListViewBaseActivity {
 			.showImageForEmptyUri(R.drawable.ic_empty)
 			.showImageOnFail(R.drawable.ic_error)
 			.cacheInMemory(true)
-//			.cacheOnDisk(true)
+			.cacheOnDisk(true)
 			.considerExifParams(true)
 			.displayer(new RoundedBitmapDisplayer(20))
 			.build();
@@ -123,7 +123,7 @@ public class ImageListActivity extends AbsListViewBaseActivity {
 
 			holder.text.setText("Item " + (position + 1));
 
-			imageLoader.displayImage(imageUrls[position], holder.image, options, animateFirstListener);
+			imageLoader.displayImage("package://" + getApplicationContext().getPackageName(), holder.image, options, animateFirstListener);
 
 			return view;
 		}

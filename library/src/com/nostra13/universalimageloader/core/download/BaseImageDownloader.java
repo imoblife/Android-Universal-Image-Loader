@@ -19,6 +19,7 @@ import android.content.ContentResolver;
 import android.content.Context;
 import android.net.Uri;
 import android.provider.ContactsContract;
+import android.util.Log;
 
 import com.nostra13.universalimageloader.core.DisplayImageOptions;
 import com.nostra13.universalimageloader.core.assist.ContentLengthInputStream;
@@ -206,6 +207,12 @@ public class BaseImageDownloader implements ImageDownloader {
 		return context.getResources().openRawResource(drawableId);
 	}
 
+	//get icon stream from installed packages
+	protected InputStream getStreamFromPackage(String imageUri, Object extra) throws IOException {
+		PackageImageDownloader cid = new PackageImageDownloader(context);
+		return cid.getStreamFromOtherSource(imageUri, extra);
+	}
+	
 	/**
 	 * Retrieves {@link InputStream} of image by URI from other source with unsupported scheme. Should be overriden by
 	 * successors to implement image downloading from special sources.<br />
@@ -220,6 +227,11 @@ public class BaseImageDownloader implements ImageDownloader {
 	 * @throws UnsupportedOperationException if image URI has unsupported scheme(protocol)
 	 */
 	protected InputStream getStreamFromOtherSource(String imageUri, Object extra) throws IOException {
-		throw new UnsupportedOperationException(String.format(ERROR_UNSUPPORTED_SCHEME, imageUri));
+		InputStream is = getStreamFromPackage(imageUri, extra);
+		if(is != null) {
+			return is;
+		} else {
+			throw new UnsupportedOperationException(String.format(ERROR_UNSUPPORTED_SCHEME, imageUri));
+		}
 	}
 }
