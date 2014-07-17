@@ -40,7 +40,7 @@ public class PackageImageDownloader extends BaseImageDownloader {
 				Bitmap bitmap = d.getBitmap();
 
 				ByteArrayOutputStream stream = new ByteArrayOutputStream();
-				bitmap.compress(Bitmap.CompressFormat.JPEG, 100, stream);
+				bitmap.compress(Bitmap.CompressFormat.PNG, 100, stream);
 				byte[] imageInByte = stream.toByteArray();
 				ByteArrayInputStream bis = new ByteArrayInputStream(imageInByte);
 				is = new ContentLengthInputStream(bis, imageInByte.length);
