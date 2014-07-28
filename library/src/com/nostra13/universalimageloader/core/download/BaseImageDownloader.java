@@ -17,7 +17,13 @@ package com.nostra13.universalimageloader.core.download;
 
 import android.content.ContentResolver;
 import android.content.Context;
+import android.content.pm.ApplicationInfo;
+import android.content.pm.PackageInfo;
+import android.content.pm.PackageManager;
+import android.graphics.Bitmap;
+import android.graphics.drawable.BitmapDrawable;
 import android.net.Uri;
+import android.os.Build;
 import android.provider.ContactsContract;
 import android.util.Log;
 
@@ -26,6 +32,8 @@ import com.nostra13.universalimageloader.core.assist.ContentLengthInputStream;
 import com.nostra13.universalimageloader.utils.IoUtils;
 
 import java.io.BufferedInputStream;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -71,29 +79,31 @@ public class BaseImageDownloader implements ImageDownloader {
 		this.readTimeout = DEFAULT_HTTP_READ_TIMEOUT;
 	}
 
-	public BaseImageDownloader(Context context, int connectTimeout, int readTimeout) {
+	public BaseImageDownloader(Context context, int connectTimeout,
+			int readTimeout) {
 		this.context = context.getApplicationContext();
 		this.connectTimeout = connectTimeout;
 		this.readTimeout = readTimeout;
 	}
 
 	@Override
-	public InputStream getStream(String imageUri, Object extra) throws IOException {
+	public InputStream getStream(String imageUri, Object extra)
+			throws IOException {
 		switch (Scheme.ofUri(imageUri)) {
-			case HTTP:
-			case HTTPS:
-				return getStreamFromNetwork(imageUri, extra);
-			case FILE:
-				return getStreamFromFile(imageUri, extra);
-			case CONTENT:
-				return getStreamFromContent(imageUri, extra);
-			case ASSETS:
-				return getStreamFromAssets(imageUri, extra);
-			case DRAWABLE:
-				return getStreamFromDrawable(imageUri, extra);
-			case UNKNOWN:
-			default:
-				return getStreamFromOtherSource(imageUri, extra);
+		case HTTP:
+		case HTTPS:
+			return getStreamFromNetwork(imageUri, extra);
+		case FILE:
+			return getStreamFromFile(imageUri, extra);
+		case CONTENT:
+			return getStreamFromContent(imageUri, extra);
+		case ASSETS:
+			return getStreamFromAssets(imageUri, extra);
+		case DRAWABLE:
+			return getStreamFromDrawable(imageUri, extra);
+		case UNKNOWN:
+		default:
+			return getStreamFromOtherSource(imageUri, extra);
 		}
 	}
 
@@ -107,11 +117,13 @@ public class BaseImageDownloader implements ImageDownloader {
 	 * @throws IOException if some I/O error occurs during network request or if no InputStream could be created for
 	 *                     URL.
 	 */
-	protected InputStream getStreamFromNetwork(String imageUri, Object extra) throws IOException {
+	protected InputStream getStreamFromNetwork(String imageUri, Object extra)
+			throws IOException {
 		HttpURLConnection conn = createConnection(imageUri, extra);
 
 		int redirectCount = 0;
-		while (conn.getResponseCode() / 100 == 3 && redirectCount < MAX_REDIRECT_COUNT) {
+		while (conn.getResponseCode() / 100 == 3
+				&& redirectCount < MAX_REDIRECT_COUNT) {
 			conn = createConnection(conn.getHeaderField("Location"), extra);
 			redirectCount++;
 		}
@@ -124,7 +136,8 @@ public class BaseImageDownloader implements ImageDownloader {
 			IoUtils.readAndCloseStream(conn.getErrorStream());
 			throw e;
 		}
-		return new ContentLengthInputStream(new BufferedInputStream(imageStream, BUFFER_SIZE), conn.getContentLength());
+		return new ContentLengthInputStream(new BufferedInputStream(
+				imageStream, BUFFER_SIZE), conn.getContentLength());
 	}
 
 	/**
@@ -137,9 +150,11 @@ public class BaseImageDownloader implements ImageDownloader {
 	 * @throws IOException if some I/O error occurs during network request or if no InputStream could be created for
 	 *                     URL.
 	 */
-	protected HttpURLConnection createConnection(String url, Object extra) throws IOException {
+	protected HttpURLConnection createConnection(String url, Object extra)
+			throws IOException {
 		String encodedUrl = Uri.encode(url, ALLOWED_URI_CHARS);
-		HttpURLConnection conn = (HttpURLConnection) new URL(encodedUrl).openConnection();
+		HttpURLConnection conn = (HttpURLConnection) new URL(encodedUrl)
+				.openConnection();
 		conn.setConnectTimeout(connectTimeout);
 		conn.setReadTimeout(readTimeout);
 		return conn;
@@ -154,10 +169,12 @@ public class BaseImageDownloader implements ImageDownloader {
 	 * @return {@link InputStream} of image
 	 * @throws IOException if some I/O error occurs reading from file system
 	 */
-	protected InputStream getStreamFromFile(String imageUri, Object extra) throws IOException {
+	protected InputStream getStreamFromFile(String imageUri, Object extra)
+			throws IOException {
 		String filePath = Scheme.FILE.crop(imageUri);
-		return new ContentLengthInputStream(new BufferedInputStream(new FileInputStream(filePath), BUFFER_SIZE),
-				(int) new File(filePath).length());
+		return new ContentLengthInputStream(new BufferedInputStream(
+				new FileInputStream(filePath), BUFFER_SIZE), (int) new File(
+				filePath).length());
 	}
 
 	/**
@@ -169,11 +186,13 @@ public class BaseImageDownloader implements ImageDownloader {
 	 * @return {@link InputStream} of image
 	 * @throws FileNotFoundException if the provided URI could not be opened
 	 */
-	protected InputStream getStreamFromContent(String imageUri, Object extra) throws FileNotFoundException {
+	protected InputStream getStreamFromContent(String imageUri, Object extra)
+			throws FileNotFoundException {
 		ContentResolver res = context.getContentResolver();
 		Uri uri = Uri.parse(imageUri);
 		if (imageUri.startsWith(CONTENT_CONTACTS_URI_PREFIX)) {
-			return ContactsContract.Contacts.openContactPhotoInputStream(res, uri);
+			return ContactsContract.Contacts.openContactPhotoInputStream(res,
+					uri);
 		} else {
 			return res.openInputStream(uri);
 		}
@@ -188,7 +207,8 @@ public class BaseImageDownloader implements ImageDownloader {
 	 * @return {@link InputStream} of image
 	 * @throws IOException if some I/O error occurs file reading
 	 */
-	protected InputStream getStreamFromAssets(String imageUri, Object extra) throws IOException {
+	protected InputStream getStreamFromAssets(String imageUri, Object extra)
+			throws IOException {
 		String filePath = Scheme.ASSETS.crop(imageUri);
 		return context.getAssets().open(filePath);
 	}
@@ -207,12 +227,6 @@ public class BaseImageDownloader implements ImageDownloader {
 		return context.getResources().openRawResource(drawableId);
 	}
 
-	//get icon stream from installed packages
-	protected InputStream getStreamFromPackage(String imageUri, Object extra) throws IOException {
-		PackageImageDownloader cid = new PackageImageDownloader(context);
-		return cid.getStreamFromOtherSource(imageUri, extra);
-	}
-	
 	/**
 	 * Retrieves {@link InputStream} of image by URI from other source with unsupported scheme. Should be overriden by
 	 * successors to implement image downloading from special sources.<br />
@@ -226,12 +240,73 @@ public class BaseImageDownloader implements ImageDownloader {
 	 * @throws IOException                   if some I/O error occurs
 	 * @throws UnsupportedOperationException if image URI has unsupported scheme(protocol)
 	 */
-	protected InputStream getStreamFromOtherSource(String imageUri, Object extra) throws IOException {
-		InputStream is = getStreamFromPackage(imageUri, extra);
-		if(is != null) {
-			return is;
+	protected InputStream getStreamFromOtherSource(String imageUri, Object extra)
+			throws IOException {
+		Log.i(getClass().getSimpleName(), "getStreamFromOtherSource(): " + imageUri);
+		if (imageUri.startsWith(PACKAGE_PREFIX)) {
+			return getStreamFromPackage(imageUri, extra);
+		} else if (imageUri.startsWith(APK_PREFIX)) {
+			return getStreamFromApk(imageUri, extra);
 		} else {
-			throw new UnsupportedOperationException(String.format(ERROR_UNSUPPORTED_SCHEME, imageUri));
+			throw new UnsupportedOperationException(String.format(
+					ERROR_UNSUPPORTED_SCHEME, imageUri));
 		}
 	}
+
+	private static final String PACKAGE_SCHEME = "package";
+	private static final String PACKAGE_PREFIX = PACKAGE_SCHEME + "://";
+
+	protected InputStream getStreamFromPackage(String imageUri, Object extra)
+			throws IOException {
+		Log.i(getClass().getSimpleName(), "getStreamFromPackage(): " + imageUri);
+		InputStream is = null;
+		try {
+			String pkgName = imageUri.substring(PACKAGE_PREFIX.length());
+			ApplicationInfo ai = context.getPackageManager()
+					.getApplicationInfo(pkgName, 1);
+			BitmapDrawable d = (BitmapDrawable) ai.loadIcon(context
+					.getPackageManager());
+			Bitmap bitmap = d.getBitmap();
+
+			ByteArrayOutputStream stream = new ByteArrayOutputStream();
+			bitmap.compress(Bitmap.CompressFormat.PNG, 100, stream);
+			byte[] imageInByte = stream.toByteArray();
+			ByteArrayInputStream bis = new ByteArrayInputStream(imageInByte);
+			is = new ContentLengthInputStream(bis, imageInByte.length);
+		} catch (Exception e) {
+			Log.w(getClass().getSimpleName(), e);
+		}
+		return is;
+	}
+
+	private static final String APK_SCHEME = "apk";
+	private static final String APK_PREFIX = APK_SCHEME + "://";
+
+	protected InputStream getStreamFromApk(String imageUri, Object extra)
+			throws IOException {
+		Log.i(getClass().getSimpleName(), "getStreamFromApk(): " + imageUri);
+		InputStream is = null;
+		try {
+			String apkUri = imageUri.substring(APK_PREFIX.length());
+			PackageInfo pi = context.getPackageManager().getPackageArchiveInfo(
+					apkUri, PackageManager.GET_ACTIVITIES);
+			ApplicationInfo ai = pi.applicationInfo;
+			if (Build.VERSION.SDK_INT >= 8) {
+				ai.sourceDir = apkUri;
+				ai.publicSourceDir = apkUri;
+			}
+			BitmapDrawable d = (BitmapDrawable) ai.loadIcon(context
+					.getPackageManager());
+			Bitmap bitmap = d.getBitmap();
+			ByteArrayOutputStream stream = new ByteArrayOutputStream();
+			bitmap.compress(Bitmap.CompressFormat.PNG, 100, stream);
+			byte[] imageInByte = stream.toByteArray();
+			ByteArrayInputStream bis = new ByteArrayInputStream(imageInByte);
+			is = new ContentLengthInputStream(bis, imageInByte.length);
+		} catch (Exception e) {
+			Log.w(getClass().getSimpleName(), e);
+		}
+		return is;
+	}
+
 }

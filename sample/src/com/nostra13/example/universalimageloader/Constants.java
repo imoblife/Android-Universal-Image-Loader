@@ -160,6 +160,8 @@ public final class Constants {
 			"http://img001.us.expono.com/100001/100001-1bc30-2d736f_m.jpg", // EXIF
 			"", // Empty link
 			"http://wrong.site.com/corruptedLink", // Wrong link
+			"package:///imoblife.toolbox.full", 
+			"apk:///sdcard/Toolbox/apk.backup", 
 	};
 
 	private Constants() {
