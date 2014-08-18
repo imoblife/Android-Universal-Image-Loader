@@ -242,7 +242,6 @@ public class BaseImageDownloader implements ImageDownloader {
 	 */
 	protected InputStream getStreamFromOtherSource(String imageUri, Object extra)
 			throws IOException {
-		Log.i(getClass().getSimpleName(), "getStreamFromOtherSource(): " + imageUri);
 		if (imageUri.startsWith(PACKAGE_PREFIX)) {
 			return getStreamFromPackage(imageUri, extra);
 		} else if (imageUri.startsWith(APK_PREFIX)) {
@@ -258,7 +257,6 @@ public class BaseImageDownloader implements ImageDownloader {
 
 	protected InputStream getStreamFromPackage(String imageUri, Object extra)
 			throws IOException {
-		Log.i(getClass().getSimpleName(), "getStreamFromPackage(): " + imageUri);
 		InputStream is = null;
 		try {
 			String pkgName = imageUri.substring(PACKAGE_PREFIX.length());
@@ -284,7 +282,6 @@ public class BaseImageDownloader implements ImageDownloader {
 
 	protected InputStream getStreamFromApk(String imageUri, Object extra)
 			throws IOException {
-		Log.i(getClass().getSimpleName(), "getStreamFromApk(): " + imageUri);
 		InputStream is = null;
 		try {
 			String apkUri = imageUri.substring(APK_PREFIX.length());
