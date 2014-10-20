@@ -20,6 +20,8 @@ import android.content.Context;
 import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
+import android.content.pm.PackageManager.NameNotFoundException;
+import android.content.res.Resources.Theme;
 import android.graphics.Bitmap;
 import android.graphics.drawable.BitmapDrawable;
 import android.net.Uri;
@@ -30,6 +32,7 @@ import android.util.Log;
 import com.nostra13.universalimageloader.core.DisplayImageOptions;
 import com.nostra13.universalimageloader.core.assist.ContentLengthInputStream;
 import com.nostra13.universalimageloader.utils.IoUtils;
+import com.nostra13.universalimageloader.utils.ThemeUtil;
 
 import java.io.BufferedInputStream;
 import java.io.ByteArrayInputStream;
@@ -242,39 +245,16 @@ public class BaseImageDownloader implements ImageDownloader {
 	 */
 	protected InputStream getStreamFromOtherSource(String imageUri, Object extra)
 			throws IOException {
-		if (imageUri.startsWith(PACKAGE_PREFIX)) {
-			return getStreamFromPackage(imageUri, extra);
-		} else if (imageUri.startsWith(APK_PREFIX)) {
+		if (imageUri.startsWith(APK_PREFIX)) {
 			return getStreamFromApk(imageUri, extra);
+		} else if (imageUri.startsWith(PACKAGE_PREFIX)) {
+			return getStreamFromPackage(imageUri, extra);
+		} else if (imageUri.startsWith(PACKAGE_DRAWABLE_PREFIX)) {
+			return getStreamFromPackageDrawable(imageUri, extra);
 		} else {
 			throw new UnsupportedOperationException(String.format(
 					ERROR_UNSUPPORTED_SCHEME, imageUri));
 		}
-	}
-
-	private static final String PACKAGE_SCHEME = "package";
-	private static final String PACKAGE_PREFIX = PACKAGE_SCHEME + "://";
-
-	protected InputStream getStreamFromPackage(String imageUri, Object extra)
-			throws IOException {
-		InputStream is = null;
-		try {
-			String pkgName = imageUri.substring(PACKAGE_PREFIX.length());
-			ApplicationInfo ai = context.getPackageManager()
-					.getApplicationInfo(pkgName, 1);
-			BitmapDrawable d = (BitmapDrawable) ai.loadIcon(context
-					.getPackageManager());
-			Bitmap bitmap = d.getBitmap();
-
-			ByteArrayOutputStream stream = new ByteArrayOutputStream();
-			bitmap.compress(Bitmap.CompressFormat.PNG, 100, stream);
-			byte[] imageInByte = stream.toByteArray();
-			ByteArrayInputStream bis = new ByteArrayInputStream(imageInByte);
-			is = new ContentLengthInputStream(bis, imageInByte.length);
-		} catch (Exception e) {
-			Log.w(getClass().getSimpleName(), e);
-		}
-		return is;
 	}
 
 	private static final String APK_SCHEME = "apk";
@@ -306,4 +286,57 @@ public class BaseImageDownloader implements ImageDownloader {
 		return is;
 	}
 
+	private static final String PACKAGE_SCHEME = "package";
+	private static final String PACKAGE_PREFIX = PACKAGE_SCHEME + "://";
+
+	// e.g: package://package
+	protected InputStream getStreamFromPackage(String imageUri, Object extra)
+			throws IOException {
+		InputStream is = null;
+		try {
+			String pkgName = imageUri.substring(PACKAGE_PREFIX.length());
+			ApplicationInfo ai = context.getPackageManager()
+					.getApplicationInfo(pkgName, 1);
+			BitmapDrawable d = (BitmapDrawable) ai.loadIcon(context
+					.getPackageManager());
+			Bitmap bitmap = d.getBitmap();
+
+			ByteArrayOutputStream stream = new ByteArrayOutputStream();
+			bitmap.compress(Bitmap.CompressFormat.PNG, 100, stream);
+			byte[] imageInByte = stream.toByteArray();
+			ByteArrayInputStream bis = new ByteArrayInputStream(imageInByte);
+			is = new ContentLengthInputStream(bis, imageInByte.length);
+		} catch (Exception e) {
+			Log.w(getClass().getSimpleName(), e);
+		}
+		return is;
+	}
+
+	private static final String PACKAGE_DRAWABLE_SCHEME = "packageDrawable";
+	private static final String PACKAGE_DRAWABLE_PREFIX = PACKAGE_DRAWABLE_SCHEME
+			+ "://";
+
+	// e.g: packageDrawable://package/drawable
+	protected InputStream getStreamFromPackageDrawable(String imageUri,
+			Object extra) {
+		InputStream is = null;
+		try {
+			String[] args = imageUri.split("/");
+			String pkgName = args[2];
+			String drawableName = args[3];
+			BitmapDrawable d = (BitmapDrawable) ThemeUtil
+					.getDrawableByFileName(context, pkgName, drawableName);
+			Bitmap bitmap = d.getBitmap();
+
+			ByteArrayOutputStream stream = new ByteArrayOutputStream();
+			bitmap.compress(Bitmap.CompressFormat.PNG, 100, stream);
+			byte[] imageInByte = stream.toByteArray();
+			ByteArrayInputStream bis = new ByteArrayInputStream(imageInByte);
+			is = new ContentLengthInputStream(bis, imageInByte.length);
+		} catch (Exception e) {
+			Log.w(getClass().getSimpleName(), e);
+			e.printStackTrace();
+		}
+		return is;
+	}
 }
