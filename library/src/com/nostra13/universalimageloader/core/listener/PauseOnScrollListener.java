@@ -37,7 +37,7 @@ public class PauseOnScrollListener implements OnScrollListener {
 
 	private final boolean pauseOnScroll;
 	private final boolean pauseOnFling;
-	private final OnScrollListener externalListener;
+	private OnScrollListener externalListener;
 
 	/**
 	 * Constructor
@@ -95,4 +95,8 @@ public class PauseOnScrollListener implements OnScrollListener {
 			externalListener.onScroll(view, firstVisibleItem, visibleItemCount, totalItemCount);
 		}
 	}
+
+    public void setExternalListener(OnScrollListener listener){
+        externalListener = listener;
+    }
 }
